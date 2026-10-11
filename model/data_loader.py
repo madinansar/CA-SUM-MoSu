@@ -4,6 +4,13 @@ from torch.utils.data import Dataset, DataLoader
 import h5py
 import numpy as np
 import json
+import os
+from pathlib import Path
+
+# Paths are resolved from the repo root; override them with the CASUM_DATA_DIR / CASUM_SUMMARIES_DIR env variables.
+ROOT = Path(__file__).resolve().parents[1]
+DATA_DIR = Path(os.environ.get("CASUM_DATA_DIR", ROOT / "data"))
+SUMMARIES_DIR = Path(os.environ.get("CASUM_SUMMARIES_DIR", ROOT / "Summaries"))
 
 
 class VideoData(Dataset):
@@ -16,15 +23,18 @@ class VideoData(Dataset):
         """
         self.mode = mode
         self.name = video_type.lower()
-        self.datasets = ['.../CA-SUM/data/SumMe/eccv16_dataset_summe_google_pool5.h5',
-                         '.../CA-SUM/data/TVSum/eccv16_dataset_tvsum_google_pool5.h5']
-        self.splits_filename = ['.../CA-SUM/data/splits/' + self.name + '_splits.json']
+        self.datasets = [str(DATA_DIR / 'SumMe/eccv16_dataset_summe_google_pool5.h5'),
+                         str(DATA_DIR / 'TVSum/eccv16_dataset_tvsum_google_pool5.h5'),
+                         str(DATA_DIR / 'MoSu/mosu_subset.h5')]
+        self.splits_filename = [str(DATA_DIR / 'splits' / (self.name + '_splits.json'))]
         self.split_index = split_index
 
         if 'summe' in self.splits_filename[0]:
             self.filename = self.datasets[0]
         elif 'tvsum' in self.splits_filename[0]:
             self.filename = self.datasets[1]
+        elif 'mosu' in self.splits_filename[0]:
+            self.filename = self.datasets[2]
         hdf = h5py.File(self.filename, 'r')
         self.list_frame_features = []
 

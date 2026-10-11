@@ -4,3 +4,13 @@ data/SumMe/eccv16_dataset_summe_google_pool5.h5
 data/TVSum/eccv16_dataset_tvsum_google_pool5.h5
 data/TVSum/ydata-anno.tsv
 inference/pretrained_models/
+# local environment, caches and outputs
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+Summaries/
+
+# generated MoSu subset (rebuild with tools/make_mosu_subset.py)
+data/MoSu/
+data/splits/mosu_splits.json

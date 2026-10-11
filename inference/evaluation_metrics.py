@@ -3,6 +3,12 @@ import numpy as np
 import csv
 from scipy.stats import spearmanr, kendalltau, rankdata
 from collections import Counter
+import os
+from pathlib import Path
+
+# Paths are resolved from the repo root; override them with the CASUM_DATA_DIR env variable.
+ROOT = Path(__file__).resolve().parents[1]
+DATA_DIR = Path(os.environ.get("CASUM_DATA_DIR", ROOT / "data"))
 
 
 def evaluate_summary(predicted_summary, user_summary, eval_method):
@@ -51,7 +57,7 @@ def get_corr_coeff(pred_imp_scores, video, dataset):
     """
 
     # Read the user annotations from the file
-    annot_path = f".../CA-SUM/data/{dataset}/ydata-anno.tsv"
+    annot_path = DATA_DIR / dataset / "ydata-anno.tsv"
     with open(annot_path) as annot_file:
         user = int(video.split("_")[-1])
 

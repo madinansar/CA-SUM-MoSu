@@ -9,6 +9,12 @@ from os.path import isfile, join
 import h5py
 import json
 import argparse
+import os
+from pathlib import Path
+
+# Paths are resolved from the repo root; override them with the CASUM_DATA_DIR env variable.
+ROOT = Path(__file__).resolve().parents[1]
+DATA_DIR = Path(os.environ.get("CASUM_DATA_DIR", ROOT / "data"))
 
 eligible_datasets = ["TVSum"]
 
@@ -83,17 +89,17 @@ if __name__ == "__main__":
     eval_metric = 'avg' if dataset.lower() == 'tvsum' else 'max'
     for split_id in range(5):
         # Model data
-        model_path = f".../CA-SUM/inference/pretrained_models/{dataset}/split{split_id}"
+        model_path = str(ROOT / "inference/pretrained_models" / dataset / f"split{split_id}")
         model_file = [f for f in listdir(model_path) if isfile(join(model_path, f))]
 
         # Read current split
-        split_file = f".../CA-SUM/data/splits/{dataset.lower()}_splits.json"
+        split_file = DATA_DIR / "splits" / f"{dataset.lower()}_splits.json"
         with open(split_file) as f:
             data = json.loads(f.read())
             test_keys = data[split_id]["test_keys"]
 
         # Dataset path
-        dataset_path = f".../CA-SUM/data/{dataset}/eccv16_dataset_{dataset.lower()}_google_pool5.h5"
+        dataset_path = DATA_DIR / dataset / f"eccv16_dataset_{dataset.lower()}_google_pool5.h5"
 
         # Create model with paper reported configuration
         trained_model = CA_SUM(input_size=1024, output_size=1024, block_size=60).to(device)

@@ -4,7 +4,8 @@
 # First, get the training loss from tensorboard as a csv file, for each data-split for the given regularization factor.
 # Then, compute the fscore (txt file) associated with the above mentioned data-splits and regularization factor.
 
-base_path=".../CA-SUM/Summaries/"
+# Defaults to <repo>/Summaries; override with the CASUM_SUMMARIES_DIR env variable.
+base_path="${CASUM_SUMMARIES_DIR:-$(cd "$(dirname "$0")/.." && pwd)/Summaries}"
 exp_num=$1
 dataset=$2
 eval_method=$3  # SumMe -> max | TVSum avg

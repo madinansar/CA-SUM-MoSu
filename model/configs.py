@@ -3,8 +3,11 @@ import argparse
 import torch
 from pathlib import Path
 import pprint
+import os
 
-save_dir = Path('.../CA-SUM/Summaries/exp1')
+# Override with the CASUM_SUMMARIES_DIR env variable (e.g. a writable dir on Kaggle).
+ROOT = Path(__file__).resolve().parents[1]
+save_dir = Path(os.environ.get('CASUM_SUMMARIES_DIR', ROOT / 'Summaries')) / 'exp1'
 
 
 def str2bool(v):

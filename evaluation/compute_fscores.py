@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
+import os
 from os import listdir
+from pathlib import Path
 import json
 import numpy as np
 import h5py
@@ -7,10 +9,15 @@ from evaluation_metrics import evaluate_summary
 from generate_summary import generate_summary
 import argparse
 
+# Paths are resolved from the repo root; override them with the CASUM_DATA_DIR / CASUM_SUMMARIES_DIR env variables.
+ROOT = Path(__file__).resolve().parents[1]
+DATA_DIR = Path(os.environ.get("CASUM_DATA_DIR", ROOT / "data"))
+SUMMARIES_DIR = Path(os.environ.get("CASUM_SUMMARIES_DIR", ROOT / "Summaries"))
+
 # arguments to run the script
 parser = argparse.ArgumentParser()
 parser.add_argument("--path", type=str,
-                    default='.../CA-SUM/Summaries/exp1/reg0.5/SumMe/results/split0',
+                    default=str(SUMMARIES_DIR / 'exp1/reg0.5/SumMe/results/split0'),
                     help="Path to the json files with the scores of the frames for each epoch")
 parser.add_argument("--dataset", type=str, default='SumMe', help="Dataset to be used")
 parser.add_argument("--eval", type=str, default="max", help="Eval method to be used for f_score reduction (max or avg)")
@@ -21,8 +28,11 @@ dataset = args["dataset"]
 eval_method = args["eval"]
 
 results = [f for f in listdir(path) if f.endswith(".json")]
-results.sort(key=lambda video: int(video[6:-5]))
-dataset_path = '.../CA-SUM/data/' + dataset + '/eccv16_dataset_' + dataset.lower() + '_google_pool5.h5'
+results.sort(key=lambda video: int(video[:-5].rsplit('_', 1)[1]))  # '<Dataset>_<epoch>.json'
+if dataset == 'MoSu':
+    dataset_path = str(DATA_DIR / 'MoSu/mosu_subset.h5')
+else:
+    dataset_path = str(DATA_DIR / dataset / ('eccv16_dataset_' + dataset.lower() + '_google_pool5.h5'))
 
 f_score_epochs = []
 for epoch in results:                       # for each epoch ...
@@ -59,7 +69,7 @@ for epoch in results:                       # for each epoch ...
         all_f_scores.append(f_score)
 
     f_score_epochs.append(np.mean(all_f_scores))
-    num_epoch = epoch.split(".")[0][6:]
+    num_epoch = epoch[:-5].rsplit('_', 1)[1]
     print(f"[epoch {num_epoch}] f_score: {np.mean(all_f_scores)}")
 
 # Save the importance scores in txt format.

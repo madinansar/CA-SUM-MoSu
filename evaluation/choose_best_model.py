@@ -2,15 +2,29 @@
 import numpy as np
 import csv
 import json
+import os
 import sys
+from pathlib import Path
 from scipy.stats import spearmanr, kendalltau, rankdata
 
 # example usage: python evaluation/choose_best_model.py 500 "TVSum"
 exp_num = sys.argv[1]
 dataset = sys.argv[2]
 
-base_path = ".../CA-SUM/Summaries"
-eligible_datasets = ["TVSum"]
+# Paths are resolved from the repo root; override them with the CASUM_DATA_DIR / CASUM_SUMMARIES_DIR env variables.
+ROOT = Path(__file__).resolve().parents[1]
+DATA_DIR = Path(os.environ.get("CASUM_DATA_DIR", ROOT / "data"))
+SUMMARIES_DIR = Path(os.environ.get("CASUM_SUMMARIES_DIR", ROOT / "Summaries"))
+base_path = str(SUMMARIES_DIR)
+eligible_datasets = ["TVSum", "MoSu"]
+mosu_path = str(DATA_DIR / "MoSu/mosu_subset.h5")
+
+
+def read_mosu_scores():
+    """ MoSu has a single (aggregated) frame-level importance score per video, used as the only "annotator". """
+    import h5py
+    with h5py.File(mosu_path, "r") as hdf:
+        return {video: [np.array(hdf[video + "/gtscore"])] for video in hdf.keys()}
 
 
 def get_corr_coeff(epoch, split_id, reg_factor):
@@ -30,8 +44,11 @@ def get_corr_coeff(epoch, split_id, reg_factor):
         print(f"Correlation coefficients are not supported by {dataset} dataset.")
         return None, None
 
+    if dataset == "MoSu":
+        return correlate(epoch, split_id, reg_factor, read_mosu_scores())
+
     # Read the user annotations from the file
-    annot_path = f".../CA-SUM/data/{dataset}/ydata-anno.tsv"
+    annot_path = DATA_DIR / dataset / "ydata-anno.tsv"
     with open(annot_path) as annot_file:
         annot = csv.reader(annot_file, delimiter="\t")
         names, user_scores = [], {}
@@ -50,6 +67,11 @@ def get_corr_coeff(epoch, split_id, reg_factor):
             else:
                 user_scores[user].append(curr_user_score)
 
+    return correlate(epoch, split_id, reg_factor, user_scores)
+
+
+def correlate(epoch, split_id, reg_factor, user_scores):
+    """ Average Spearman's rho and Kendall's tau between the predicted scores and each annotation, over the test set. """
     # Read each score and compared it
     scores_path = f"{base_path}/exp{exp_num}/reg{reg_factor}/{dataset}/results/split{split_id}/{dataset}_{epoch-1}.json"
     with open(scores_path) as score_file:       # Read the importance scores affiliated with the selected epoch
